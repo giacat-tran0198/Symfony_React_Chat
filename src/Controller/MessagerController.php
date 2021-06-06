@@ -6,12 +6,13 @@ use App\Entity\Conversation;
 use App\Entity\Message;
 use App\Repository\MessageRepository;
 use App\Repository\ParticipantRepository;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -34,35 +35,35 @@ class MessagerController extends AbstractController
      */
     private $participantRepository;
     /**
-     * @var UserRepository
+     * @var HubInterface
      */
-    private $userRepository;
+    private $hub;
 
     /**
      * MessagerController constructor.
      * @param EntityManagerInterface $entityManager
      * @param MessageRepository $messageRepository
      * @param ParticipantRepository $participantRepository
+     * @param HubInterface $hub
      */
     public function __construct(EntityManagerInterface $entityManager,
                                 MessageRepository $messageRepository,
                                 ParticipantRepository $participantRepository,
-                                UserRepository $userRepository)
+                                HubInterface $hub)
     {
 
         $this->entityManager = $entityManager;
         $this->messageRepository = $messageRepository;
         $this->participantRepository = $participantRepository;
-        $this->userRepository = $userRepository;
+        $this->hub = $hub;
     }
 
     /**
      * @Route("/{id}", name="getMessages", methods={"GET"})
-     * @param Request $request
      * @param Conversation $conversation
      * @return JsonResponse
      */
-    public function index(Request $request, Conversation $conversation): JsonResponse
+    public function index(Conversation $conversation): JsonResponse
     {
         // can i view the conversation
 
@@ -97,15 +98,15 @@ class MessagerController extends AbstractController
     {
         $user = $this->getUser();
 
-//        $recipient = $this->participantRepository->findParticipantByConverstionIdAndUserId(
-//            $conversation->getId(),
-//            $user->getId()
-//        );
+        $recipient = $this->participantRepository->findParticipantByConverstionIdAndUserId(
+            $conversation->getId(),
+            $user->getId()
+        );
 
         $content = $request->get('content', null);
         $message = new Message();
         $message->setContent($content);
-        $message->setUser($this->userRepository->find(2));
+        $message->setUser($user);
 
         $conversation->addMessage($message);
         $conversation->setLastMessage($message);
@@ -124,6 +125,17 @@ class MessagerController extends AbstractController
         $messageSerialized = $serializer->serialize($message, 'json', [
             'attributes' => ['id', 'content', 'createdAt', 'mine', 'conversation' => ['id']]
         ]);
+        $update = new Update(
+            [
+                sprintf("/conversations/%s", $conversation->getId()),
+                sprintf("/conversations/%s", $recipient->getUser()->getUsername()),
+                sprintf("/%s", $recipient->getUser()->getUsername()),
+            ],
+            $messageSerialized,
+            true
+        );
+
+        $this->hub->publish($update);
 
         $message->setMine(true);
         return $this->json($message, Response::HTTP_CREATED, [], [

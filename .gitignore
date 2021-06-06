@@ -1,3 +1,7 @@
+###> ide ###
+.idea
+###< ide ###
+
 
 ###> symfony/framework-bundle ###
 /.env.local
@@ -21,5 +25,6 @@
 
 ###> mercure ###
 mercure
-updates.db
+!/src/Mercure
+mercure.db
 ###< mercure ###
