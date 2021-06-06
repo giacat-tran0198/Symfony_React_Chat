@@ -13,6 +13,8 @@ use Doctrine\ORM\Mapping\Index;
  */
 class Message
 {
+    use Timestamp;
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
