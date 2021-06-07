@@ -12,11 +12,11 @@ export default class Conversation extends Component {
                          width="50" className="rounded-circle"/>
                     <div className="media-body ml-4">
                         <div className="d-flex align-items-center justify-content-between mb-1">
-                            <h6 className="mb-0">Username</h6>
+                            <h6 className="mb-0">{this.props.conversation.username}</h6>
                             <small
-                                className="small font-weight-bold">{new Date().toLocaleDateString()}</small>
+                                className="small font-weight-bold">{new Date(this.props.conversation.createdAt).toLocaleDateString()}</small>
                         </div>
-                        <p className="font-italic mb-0 text-small">Hello</p>
+                        <p className="font-italic mb-0 text-small">{this.props.conversation.content}</p>
                     </div>
                 </div>
             </Link>
