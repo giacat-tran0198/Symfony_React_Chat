@@ -3,7 +3,7 @@
 {% block title %}Hello IndexController!{% endblock %}
 
 {% block body %}
-    <div id="app"></div>
+    <div id="app" data-username="{{ app.user.username }}"></div>
 {% endblock %}
 
 {% block javascripts %}

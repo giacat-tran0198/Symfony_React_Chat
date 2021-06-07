@@ -7,14 +7,27 @@ const mapStateToProps = (state) => {
     return state;
 };
 
-
 class Left extends React.Component {
     constructor(props) {
         super(props);
     }
 
-    componentDidMount() {
+    componentWillMount() {
+        const _t = this;
         this.props.fetchConversations()
+            .then(() => {
+                let url = new URL(this.props.hubUrl);
+                url.searchParams.append('topic', `/conversations/${this.props.username}`);
+                url.searchParams.append('topic', `/${this.props.username}`);
+                const eventSource = new EventSource(url, {
+                    withCredentials: true
+                });
+                eventSource.onmessage = function (event) {
+                    debugger
+                    const data = JSON.parse(event.data);
+                    _t.props.setLastMessage(data, data.conversation.id);
+                }
+            });
     }
 
     render() {
@@ -26,10 +39,20 @@ class Left extends React.Component {
                     </div>
                     <div className="messages-box">
                         <div className="list-group rounded-0">
-                            {this.props.items
-                                .sort((a, b) => (a.createdAt < b.createdAt))
-                                .map((conversation, index) => (
-                                    <Conversation conversation={conversation} key={index}/>))}
+                            {
+                                this.props.items !== undefined ?
+
+                                    this.props.items
+                                        .sort((a, b) => {
+                                            return a.createdAt < b.createdAt;
+                                        })
+                                        .map((conversation, index) => {
+                                            return (
+                                                <Conversation conversation={conversation} key={index}/>
+                                            )
+                                        })
+                                    : ''
+                            }
                         </div>
                     </div>
                 </div>
